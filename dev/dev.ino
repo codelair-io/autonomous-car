@@ -1,56 +1,88 @@
-/*
-  Blink
+ int inputPinSensor=8; //ECHO pin 
+ int outputPinSensor=7; //TRIG pin 
 
-  Turns an LED on for one second, then off for one second, repeatedly.
+ int forwardPin=13;
+ int backwardsPin=11;
+ int leftPin=2;
+ int rightPin=3;
 
-  Most Arduinos have an on-board LED you can control. On the UNO, MEGA and ZERO
-  it is attached to digital pin 13, on MKR1000 on pin 6. LED_BUILTIN is set to
-  the correct LED pin independent of which board is used.
-  If you want to know what pin the on-board LED is connected to on your Arduino
-  model, check the Technical Specs of your board at:
-  https://www.arduino.cc/en/Main/Products
+ // CM
+ int MAX_DIST=1000;
 
-  modified 8 May 2014
-  by Scott Fitzgerald
-  modified 2 Sep 2016
-  by Arturo Guadalupi
-  modified 8 Sep 2016
-  by Colby Newman
+ void setup() 
+ { 
+   Serial.begin(9600); 
+   pinMode(inputPinSensor, INPUT); 
+   pinMode(outputPinSensor, OUTPUT); 
 
-  This example code is in the public domain.
+   pinMode(forwardPin, OUTPUT);
+   pinMode(backwardsPin, OUTPUT);
+   pinMode(leftPin, OUTPUT);
+   pinMode(rightPin, OUTPUT);
+   randomSeed(analogRead(0));
+ }
+ 
+ void loop() 
+ {  
+   driveForwards(true);
+   bool isNear = isNearObsticle();
 
-  http://www.arduino.cc/en/Tutorial/Blink
-*/
+   if(isNear){
+     Serial.write("I found some stuff!!!");
+     int turnVal = random(1,99);
+     Serial.write(turnVal);
+     if(turnVal % 2 == 0){
+      turn(true);
+     }else {
+      turn(false);
+     }
+     driveForwards(false);
+     driveBackwards(true);
+     delay(1500);
+     driveBackwards(false);
+     
+     stopTurning(); 
+   }
+ } 
 
-// the setup function runs once when you press reset or power the board
-void setup() {
-  // initialize digital pin LED_BUILTIN as an output.
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(2, OUTPUT);
-  pinMode(3, OUTPUT);
-  pinMode(13, OUTPUT);
-  pinMode(11, OUTPUT);
-  
-  Serial.begin(9600);
-}
-int i = 0;
-// the loop function runs over and over again forever
-void loop() {
-  delay(2000);
-  if(i++%100 == 0) {
-    Serial.println("Fuck the world!");
+ void driveForwards(bool shouldDrive){
+  if(shouldDrive) digitalWrite(forwardPin, HIGH);
+  else digitalWrite(forwardPin, LOW);
+ }
+
+ void driveBackwards(bool shouldDrive){
+  if(shouldDrive) digitalWrite(backwardsPin, HIGH);
+  else digitalWrite(backwardsPin, LOW);
+ }
+
+ void turn(bool isLeft){
+  if(isLeft){
+    digitalWrite(leftPin, HIGH);
+    digitalWrite(rightPin,LOW); 
+  }else{
+    digitalWrite(leftPin, LOW);
+    digitalWrite(rightPin,HIGH);
   }
-  if(i%2 == 0) {
-    digitalWrite(13, HIGH);
-    digitalWrite(11, LOW);
-    digitalWrite(2, HIGH);
-    digitalWrite(3, LOW);
-    Serial.println("Bleh?");
-  } else {
-    digitalWrite(13, LOW);
-    digitalWrite(11, HIGH);
-    digitalWrite(2, LOW);
-    digitalWrite(3, HIGH);
-    Serial.println("WAAAAGH!!!");
-  }  
-}
+ }
+
+ void stopTurning(){
+    digitalWrite(leftPin, LOW);
+    digitalWrite(rightPin,LOW);
+ }
+ 
+ bool isNearObsticle(){
+   digitalWrite(outputPinSensor, LOW); //Trigger ultrasonic detection 
+   delayMicroseconds(5);
+   digitalWrite(outputPinSensor, HIGH); //Trigger ultrasonic detection 
+   delayMicroseconds(10);
+   digitalWrite(outputPinSensor, LOW); //Trigger ultrasonic detection 
+   long distance = pulseIn(inputPinSensor, HIGH); //Read ultrasonic reflection
+   Serial.println(distance); //Print distance 
+  
+   if (distance > MAX_DIST){
+     return true;
+   } else {
+    return false;
+   }
+
+ }
